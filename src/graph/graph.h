@@ -1,5 +1,5 @@
-#ifndef REPORT_H
-# define REPORT_H
+#ifndef GRAPH_H
+# define GRAPH_H
 
 // ?
 

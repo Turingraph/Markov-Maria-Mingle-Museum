@@ -12,6 +12,12 @@ int		f_atoi(const char *src,
 			bool *is_int, const char *base, size_t digits);
 size_t	ft_putnbr_fd(int n, int fd, const char *base, size_t digits);
 
+// debug.c
+
+void	write_total_score(size_t score, size_t max_score);
+int		compare_intarr(const int *str_1, const int *str_2, size_t n);
+void	warning_file_not_exists(const char *src);
+
 // string.c
 
 void	*malloc_talk(size_t elem_size, const char *comment);
