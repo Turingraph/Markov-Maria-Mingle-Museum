@@ -37,6 +37,7 @@ Statistics
 1.	Value-Frequency (Distribution)
 2.	Value-Time (Trend)
 
+<!-- 
 # Input format (no code)
 
 ## 1st example
@@ -92,4 +93,4 @@ Feature to avoid to do
 1.	FORBIDDEN_FORMULA (because it risks scope creep)
 
 ## 2st example
-
+ -->
