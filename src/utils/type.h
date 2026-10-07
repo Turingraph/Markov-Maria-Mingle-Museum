@@ -4,6 +4,7 @@
 //------------------------------------------------------------------
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 /**
  * This struct is used for define the category, for example
@@ -18,88 +19,115 @@ typedef struct t_category_dict
 }	t_category_dict;
 
 /**
- * This enum is used for describe the behavior of A, B, C, D.
- * Suppose that A is straight guy, B is gay guy, and C is straight girl.
- * 
- * - "" : A is 100% OK with B might or might not like A, such that [B] ---> [A], or [B]    [A]
- * - CONNECT_BLOCK : A is 100% not OK when B like A, such that [B]    [A]
- * - CONNECT_SEARCH : A like C, such that [A] ---> [C] while C might or might not like A.
- * - CONNECT_RECIPROCAL : A like C if and only if C like A, such that [A] <--> [C],
- * if C like B, then there isn't any connection between A and C.
- * 
- * Note that A can CONNECT_BLOCK a guy while CONNECT_RECIPROCAL a girl,
- * but A cannot operate multiple t_connection_state e.g. CONNECT_BLOCK and CONNECT_SEARCH etc.
- * with the same category.
- */
-typedef enum t_connection_policy
-{
-	CONNECT_SEARCH,
-	CONNECT_BLOCK,
-	CONNECT_RECIPROCAL
-}	t_connection_policy;
-
-/**
- * This struct is used for define the preference, for example
- * - category_id
- * 		The prefer or blocked category.
- * - max_counts
+ * This struct define the overall preference of the agents.
+ * - category_id_arr (This is array)
+ * 		The preferred category. For example both straight/bisexual woman and gay/bisexual man like man,
+ * 		both lesbian/bisexual woman and straight/bisexual man like woman,
+ * 		Carbon like hydrogen because it can become Methane or Ethane etc.
+ * - max_connected_arr (This array can be NULL.)
+ * 		The default value is 1.
  * 		e.g. Most people, including gays, straight, and bisexual people,
  * 		prefer to have one romantic partners (some people also prefer
  * 		ethical non monogamy but we want to simulate
- * 		only people who have 1 crushes at a time), so max_counts = 1.
- * 		on the other hands, many atoms have multiple connection e.g. max_counts of oxygen and carbon
+ * 		only people who have 1 crushes at a time), so max_connected = 1.
+ * 		on the other hands, many atoms have multiple connection e.g. max_connected of oxygen and carbon
  * 		is 2 and 4 respectively.
- * - connection_policy
- * 		e.g. some straight guy OK if gay guy like him and some gay guy is OK with that,
- * 		but covalent bond don't behave like that.
+ * - is_reciprocal_arr (This array can be NULL.)
+ * 		The default value is false.
+ * 		e.g. some gay guy like some straight guy and he OK if his crush don't like him back,
+ * 		(is_reciprocal is false). However some gay guy want to make connection
+ * 		with only gay or bisexual guy because he want reciprocal from his crush (is_reciprocal is true),
+ * 		every covalent bond have is_reciprocal equal to true etc.
+ * - length (both length and max_total_connected should either greater than 0 or equal to 0)
+ * 		The length of preference_arr array.
+ * 		some agents might have multiple preference towards multiple categories of agents
+ * 		e.g. bisexual people like both man and woman, Carbon like Oxygen, Carbon, and hydrogen etc.
+ * - max_total_connected (this value might or might not equal to length)
+ * 		the maximum relationship that the agents can make,
+ * 		for examples most people (guys, gays, bisexual etc.) have a girl/boy friend,
+ * 		but the max_total_connected of carbon is 4,
+ * 		Note that this is differ from max_connected_arr[i],
+ * 		because carbon can have connection with 1 carbon and 3 hydrogen to become Ethane, but it cannot connect 2 carbons and 4 hydrogens.
+ * 		Note that this have limitation, for example carbon that have connection with 2 oxygen and 2 hydrogen is invalid,
+ * 		we could impose the additional blueprint, such that we have a few types of carbon based on its preference preference as multiple blueprint
+ * 		e.g. carbon that never prefer hydrogen but prefer carbon and oxygen, carbon that never prefer oxygen etc.
  */
-typedef struct t_preference
+typedef struct t_preference_arr
 {
-	size_t				category_id;
-	size_t				max_counts;
-	t_connection_policy	connection_policy;
-}	t_preference;
+	size_t			*category_id_arr;
+	size_t			*max_connected_arr;
+	bool			*is_reciprocal_arr;
+	size_t			length;
+	size_t			max_total_connected;
+}	t_preference_arr;
+
+/**
+ * This struct make other agents with the specific category_id cannot connect to the given agent.
+ * - category_id_arr (This array can be NULL if and only if length == 0)
+ * 		The target category, for examples some straight man OK if the gay man like him,
+ * 		but some straight man don't OK with that etc.
+ * 		Note that some straight man might block woman such that she cannot make
+ * 		connection with him, but he can make connection with her.
+ * 		This allow us to define more complicated unusual situation e.g.
+ * 		bad guys block police but he call police for negotiating with police by using his hostage. etc.
+ * - length
+ * 		The length of category_id_arr array.
+ */
+typedef struct t_block_arr
+{
+	size_t	*category_id_arr;
+	size_t	length;
+}	t_block_arr;
 
 /**
  * This struct is used for defining the blue print of the agents,
  * for example some people are straight guy, some people are lesbian, some are bisexual guy, some particles
- * are Carbon that only make bond with hydrogen but some Carbon making bond with only oxygen instead etc.
+ * are Carbon that only make bond with hydrogen and oxygen, but some Carbon making bond with only oxygen instead etc.
+ * - blueprint_id
+ * 		The id of the blue print.
  * - population
  * 		The total number of the population of agents with the given blue prints.
  * - category_id
  * 		The category of the agents e.g. Male, Female, Oxygen, Hydrogen, Carbon etc.
- * - preference
- * 		all of the explicited preference that given if the agent prefer/avoid
- * 		the other agents with a particular category type. 
- * - preference_length
- * 		the number of all explicited prefer/avoid preference.
- * - max_connected
- * 		the maximum relationship that the agents can make,
- * 		for examples most people (guys, gays, bisexual etc.) have a girl/boy friend,
- * 		but the max_connected of carbon is 4,
- * 		Note that this is differ from preference[i].max_counts,
- * 		because carbon can have connection with 1 carbon and 3 hydrogen to become Ethane.
- * 		Note that this have limitation, for example carbon that have connection with 2 oxygen and 2 hydrogen is invalid,
- * 		we could impose the blueprint, such that we have a few types of carbon based on its preference preference as multiple blueprint
- * 		e.g. carbon that not prefer hydrogen, carbon that not prefer oxygen etc.
- * - next_state
+ * - preference_arr
+ * 		The list of the prefer categories e.g. every straight guys like girls,
+ * 		some Carbon making bond with Carbon, Oxygen, Hydrogen etc.
+ * - block_arr
+ * 		The list of blocked categories.
+ * - next_state (This array can be NULL.)
  * 		user can set the next state of the agent, such that the instance of the agents change its blue print,
  * 		for example human agents have Covid infection after someone with Covid contact them etc.
  */
 typedef struct t_blueprint
 {
-	size_t			blueprint_id;
-	size_t			population;
-	size_t			category_id;
-	t_preference	*preference;
-	size_t			preference_length;
-	size_t			max_connected;
-	void			(*next_state)(void*);
+	size_t				blueprint_id;
+	size_t				population;
+	size_t				category_id;
+	t_preference_arr	preference_arr;
+	t_block_arr			block_arr;
+	void				(*next_state)(void*);
 }	t_blueprint;
 
 /**
  * record which connection that the agents make with another agents
  * and how many connection it make as dynamic array.
+ * - agent_id (This array can be NULL if and only if length equal to 0)
+ * 		The id of the given agent, for examples this gay guys have the connection with another gay guy,
+ * 		so he have the agent_id of that dude. Another examples is one straight dude might be popular among
+ * 		many woman and some gay man, so he own their multiple agent_id, even if he has only one crush toward a girl.
+ * - frequency (This array can be NULL.)
+ * 		The frequency would likely represent the sum of each time step of the graph
+ * 		i.e. gay like a guy once at a time but he might have multiple ex boy friend,
+ * 		so this is the sum count divide by n steps.
+ * 		This is useful for getting the Eigan vector of the matrix graph within
+ * 		a particular interval time. We can compare how change the Eigan vector
+ * 		is for 0 to 100 and 100 to 200 time.
+ * 		In addition, we can operate multiple algorithms e.g. path finding,
+ * 		more generalized betweenness centrality (beyond just the integer value) etc.
+ * - length (length <= capacity)
+ * 		The length of agent_id and frequency array.
+ * - capacity
+ * 		The total capacity of the agent_id and frequency dynamic array.
  */
 typedef struct t_connect_agents
 {
@@ -110,22 +138,24 @@ typedef struct t_connect_agents
 }	t_connect_agents;
 
 /*
- * Properties of each instance of agent. Note that the simulation can have a few blueprint, but a lots of agents instance.
+ * Properties of each instance of agent. Note that the simulation can have a few blueprint, but a lots of agents instances.
+ * - agent_id
+ * 		The ID of each agents instance.
  * - blueprint
  * 		e.g. some people are straight guy, some people are lesbian, some are bisexual guy, some particles
  * 		are Carbon that only make bond with hydrogen but some Carbon making bond with only oxygen instead etc.
  * - prefer_agents
- * 		e.g. female (if the agent is straight man), Oxygen (if the agent are Oxygen merging Carbon or Hydrogen) etc.
+ * 		e.g. female (if the agent is straight man), Oxygen (if the agent is Carbon or Hydrogen) etc.
  * - fan_agents
  * 		e.g. some agents that contact them like gay man or bisexual man/woman,
  * 		or straight woman (if this agent is straight man) etc.
  */
 typedef struct t_agent
 {
-	size_t				id;
-	t_blueprint			*blueprint;
-	t_connect_agents	*prefer_agents;
-	t_connect_agents	*fan_agents;
+	size_t				agent_id;
+	t_blueprint			blueprint;
+	t_connect_agents	prefer_agents;
+	t_connect_agents	fan_agents;
 }	t_agent;
 
 /*

@@ -86,3 +86,18 @@ size_t	index_of_a(const char *str, char stop)
 		i += 1;
 	return (i);
 }
+
+// time/space: O(n) / O(1)
+size_t	index_of_id(const size_t *arr, size_t length, size_t id)
+{
+	size_t	i;
+
+	i = 0;
+	while (arr != NULL && i < length)
+	{
+		if (arr[i] == id)
+			return (i);
+		i += 1;
+	}
+	return (i);
+}

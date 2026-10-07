@@ -23,5 +23,6 @@ void	warning_file_not_exists(const char *src);
 void	*malloc_talk(size_t elem_size, const char *comment);
 size_t	f_strlen(const char *str);
 size_t	index_of_a(const char *str, char stop);
+size_t	index_of_id(const size_t *arr, size_t length, size_t id);
 
 #endif
